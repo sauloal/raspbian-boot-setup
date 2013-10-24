@@ -2,7 +2,7 @@
 
 Enhance Raspbian with a mechanism by which *any* host system used to image an SD card can add a setup script to the SD card to initiate a process on first boot.
 
-The mechanism will allow communities to form around Raspbian as the base for special purpose Raspberry Pi configuration without the need to build and host an entire OS. It should be possible to prepare SD cards that initiate a setup process the yeilds a system that does not need to be further configured by following lengthy explainations found on forums and wikis.
+The mechanism will allow communities to form around Raspbian as the base for special purpose Raspberry Pi configuration without the need to build and host an entire OS. It should be possible to prepare SD cards that initiate a setup process the yields a system that does not need to be further configured by following lengthy explanations found on forums and wikis.
 
 # Practical Applications
 
@@ -14,7 +14,17 @@ The mechanism will allow communities to form around Raspbian as the base for spe
 
 1. /etc/rcS.d/S01simple_boot_setup is symlinked to /etc/init.d/simple_boot_setup
 2. /etc/init.d/simple_boot_setup calls /boot/simple_boot_setup.sh
+2.1. /boot/simple_boot_setup.sh calls /boot/files/simple_boot_setup_0.sh only once (the file gets renamed and not called again)
+2.2. /boot/simple_boot_setup.sh calls /boot/files/simple_boot_setup_1.sh at every boot
 3. /boot is a FAT file system so that *any* OS can edit it.
+
+
+# Included
+
+- /etc/networks/interfaces for wifi and cable
+- /etc/resolve.conf for DNS (google and open dns)
+- begin of attach_volume.py script to auto mount usb in desired folder
+- copies id_rsa and known_hosts if exists
 
 #### Here are some examples of things you might do...
 
