@@ -1,0 +1,3 @@
+#/dev/disk/by-id;mount_point;fs_type;fs_options;src_folder;dst_folder
+usb-CBM_Flash_Disk_261633005538D501-0:0-part1;;;/media/usb1;king1;/var/www/html/files/king1
+usb-CBM_Flash_Disk_261633005538D501-0:1-part1;;;/media/usb2;king2;/var/www/html/files/king2

@@ -1,0 +1,33 @@
+# The loopback network interface  
+auto lo  
+iface lo inet loopback  
+
+# The CABLE network interface  
+# DYNAMIC
+# iface eth0 inet dhcp
+
+# STATIC
+iface eth0 inet static
+address   172.16.0.251
+netmask   255.255.255.0
+gateway   172.16.0.1
+broadcast 172.16.1.255
+
+
+# The WIRELESS network interface  
+allow-hotplug wlan0
+
+# DYNAMIC
+#http://www.howtogeek.com/167425/how-to-setup-wi-fi-on-your-raspberry-pi-via-the-command-line/
+#http://learn.adafruit.com/adafruits-raspberry-pi-lesson-3-network-setup/setting-up-wifi-with-occidentalis
+iface wlan0 inet dhcp
+	wpa-ssid "ssa"
+	wpa-psk  "casanova"
+#wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+
+# MANUAL
+#iface wlan0 inet manual
+#wpa-roam /etc/wpa_supplicant/wpa_supplicant.conf
+
+
+auto wlan0 eth0

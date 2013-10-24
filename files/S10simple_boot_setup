@@ -1,0 +1,53 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          simple_boot_setup
+# Required-Start:    $local_fs
+# Required-Stop:
+# X-Start-Before:    $network
+# X-Stop-After:
+# Default-Start: S
+# Default-Stop: 
+# Short-Description: Run /boot/simple_boot_setup.sh at boot
+# Description: Run /boot/simple_boot_setup.sh at boot
+### END INIT INFO
+
+. /lib/init/vars.sh
+. /lib/lsb/init-functions
+
+set -e
+
+LOG=/boot/simple_boot_setup.sh.works
+echo           "$0: running FAT setup" > $LOG
+logger         "$0: working FAT setup"
+log_daemon_msg "$0: running FAT setup\n"
+
+
+case "$1" in
+  start)
+    echo           "$0: starting" >> $LOG
+    logger         "$0: starting"
+    log_daemon_msg "$0: starting\n"
+
+    if [ -x /boot/simple_boot_setup.sh ]; then
+        echo           "$0: starting: exists" >> $LOG
+        logger         "$0: starting: exists"
+        log_daemon_msg "$0: starting: exists\n"
+        export CALLED_BY=init
+        /boot/simple_boot_setup.sh
+        echo           "$0: starting: started" >> $LOG
+        logger         "$0: starting: started"
+        log_daemon_msg "$0: starting: started\n"
+    else
+        echo           "$0: starting: does not exists" >> $LOG
+        logger         "$0: starting: does not exists"
+        log_daemon_msg "$0: starting: does not exists\n"
+    fi
+    ;;
+  *)
+    echo           "Usage: $0 start" >&2
+    echo           "$0: not starting" >> $LOG
+    logger         "$0: not starting"
+    log_daemon_msg "$0: not starting\n"
+    exit 3
+    ;;
+esac
