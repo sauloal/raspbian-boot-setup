@@ -104,7 +104,9 @@ def mountFolder(cfg, fstab):
 	print
 	if os.path.exists( src_folder ):
 		mountCmd(   src_folder, dst_folder, opts=fsoptCmd )
-	print
+	else:
+		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount, 'DEVICE DOES NOT EXISTS. ADDING TO FSTAB ONLY'
+		print
 	addToFstab( src_folder, dst_folder, fstab, fstype, fsopt )
 
 
@@ -123,6 +125,8 @@ def mountDev(cfg, fstab):
 	print
 	if os.path.exists( devPath ):
 		mountCmd(   devPath, mount, opts=fsoptCmd, fstype=fstype )
+	else:
+		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount, 'DEVICE DOES NOT EXISTS. ADDING TO FSTAB ONLY'
 	print
 	addToFstab( devPath, mount, fstab, fstype, fsopt         )
 
