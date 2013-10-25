@@ -21,9 +21,13 @@ echo "START" > $LOG
 
 SRC=/boot/files
 
-FIL=$SRC/disk
+FIL=$SRC/disks
 if [ -e $FIL ]; then
-	python $SRC/attach_devices.py -c $FIL
+	python $SRC/attach_devices.py -c $FIL 2>&1 >> $LOG
 fi
+
+echo "MOUTING" >> $LOG
+mount -a       >> $LOG
+echo "MOUTED"  >> $LOG
 
 echo "END" >> $LOG

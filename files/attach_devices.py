@@ -13,7 +13,7 @@ DEFAULT_FS_OPTIONS = 'defaults'
 #DEFAULT_FS_TYPE='ext4'
 #DEFAULT_FS_OPTIONS='rw,user,auto,noatime,exec,relatime,seclabel,data=writeback,barrier=0,nobh,errors=remount-ro'
 
-debug = True
+debug = False
 
 vinfo = sys.version_info
 print 'PYTHON', vinfo
@@ -90,23 +90,25 @@ def mountFolder(cfg, fstab):
 	fsopt      = 'bind'
 	fsoptCmd   = '--bind -o ' + fsopt
 
+	print "MOUNTING :: BIND SRC FOLDER", src_folder,"DST FOLDER",dst_folder
 	
 	if not os.path.exists( src_folder ):
 		print "    SOURCE FOLDER", src_folder, "DOES NOT EXISTS"
-		if for_real:
-			sys.exit(1)
 	
-	if not os.path.exists( dst_folder ):
-		print "    DESTINATION FOLDER", dst_folder, "DOES NOT EXISTS. CREATING"
-		if for_real:
-			os.makedirs( dst_folder )
+	else:
+		if not os.path.exists( dst_folder ):
+			print "    DESTINATION FOLDER", dst_folder, "DOES NOT EXISTS. CREATING"
+			if for_real:
+				os.makedirs( dst_folder )
 	
 	print
 	if os.path.exists( src_folder ):
 		mountCmd(   src_folder, dst_folder, opts=fsoptCmd )
+		
 	else:
-		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount, 'DEVICE DOES NOT EXISTS. ADDING TO FSTAB ONLY'
+		print "MOUNTING :: BIND SRC FOLDER", src_folder,"DST FOLDER",dst_folder,' :: SOURCE DOES NOT EXISTS. ADDING TO FSTAB ONLY'
 		print
+		
 	addToFstab( src_folder, dst_folder, fstab, fstype, fsopt )
 
 
@@ -119,23 +121,21 @@ def mountDev(cfg, fstab):
 	
 	print "MOUNTING :: DEV", dev,"MOUNT POINT",mount
 	print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"FS TYPE", fstype,"FS OPT", fsopt
-
-	devPath = os.path.join( '/dev/disk/by-id', dev )
 	
 	print
-	if os.path.exists( devPath ):
-		mountCmd(   devPath, mount, opts=fsoptCmd, fstype=fstype )
+	if os.path.exists( dev ):
+		mountCmd(   dev, mount, opts=fsoptCmd, fstype=fstype )
+		
 	else:
 		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount, 'DEVICE DOES NOT EXISTS. ADDING TO FSTAB ONLY'
 	print
-	addToFstab( devPath, mount, fstab, fstype, fsopt         )
+	addToFstab( dev, mount, fstab, fstype, fsopt         )
 
 
 def mountCmd( dev, mount, opts="", fstype="" ):
-	if pyver == '2.7':
-		mounted    = subprocess.check_output(['mount'])
-	else:
-		mounted    = subprocess.Popen(['mount'], stdout=subprocess.PIPE).stdout
+	mounted = getMounted()
+	
+	devLnk  = os.readlink( dev )
 	
 	if fstype == 'auto':
 		fstype = ''
@@ -143,58 +143,85 @@ def mountCmd( dev, mount, opts="", fstype="" ):
 	if fstype != '':
 		fstype = '-t '+fstype
 		
-	if not mount in mounted:
-		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"MOUNTING"
+		
+	if not (
+		(mount  in mounted['mount']) or 
+		(dev    in mounted['dev'  ]) or 
+		(devLnk in mounted['dev'  ])):
+		
+		print "MOUNTING CMD :: DEV", dev,"MOUNT POINT",mount,"MOUNTING"
 
 		if not os.path.exists( mount ):
-			print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"MOUNTING :: CREATING DIR"
+			print "MOUNTING CMD :: DEV", dev,"MOUNT POINT",mount,"MOUNTING :: CREATING DIR"
 			print "L"*100
 			print "CREATING MOUNT DIR", mount
 			if for_real:
+				print "COPYING"
 				os.makedirs( mount )
 			print "T"*100 + "\n\n"
 
-		
-		cmd = [ 'mount', fstype, opts, dev, mount ]
-		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"MOUNTING :: MOUNTING :: RUNNING"
+
+		cmd = 'mount %s %s %s %s' % ( fstype , opts, dev, mount )
+		print "MOUNTING CMD :: DEV", dev,"MOUNT POINT",mount,"MOUNTING :: MOUNTING :: RUNNING"
 		print "L"*100
 		print "CALLING MOUNT",cmd
 		if for_real:
-			res1 = subprocess.call( cmd )
+			print "MOUNTING"
+			res1 = subprocess.call( cmd, shell=True )
 		else:
 			res1 = 0
 		print "T"*100 + "\n\n"
 
 
 		if res1 != 0:
-			print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"MOUNTING :: MOUNTING :: RUNNING :: FAILED", res1
+			print "MOUNTING CMD :: DEV", dev,"MOUNT POINT",mount,"MOUNTING :: MOUNTING :: RUNNING :: FAILED", res1
 			sys.exit(1)
 
-		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"MOUNTING :: MOUNTING :: RUNNING :: success"
+		print "MOUNTING CMD :: DEV", dev,"MOUNT POINT",mount,"MOUNTING :: MOUNTING :: RUNNING :: success"
 
 	else:
-		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"ALREADY MOUNTED. SKIPPING"
+		print "MOUNTING CMD :: DEV", dev,"MOUNT POINT",mount,"ALREADY MOUNTED. SKIPPING"
 
+		
+def getMounted():
+	if pyver == '2.7':
+		mounted    = subprocess.check_output(['mount'])
+	else:
+		mounted    = subprocess.Popen(['mount'], stdout=subprocess.PIPE).stdout.readlines()
+	
+	pp( mounted, indent=2 )
+	
+	mnt = { 'dev': [], 'mount': [] }
+	for line in mounted:
+		cols = line.split()
+		mnt['dev'  ].append( cols[0] )
+		mnt['mount'].append( cols[2] )
+	
+	pp( mnt, indent=2 )
+	
+	return mnt
+	
 
 def addToFstab( dev, mount, fstab, fstype, fsopt ):
 	print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"ADDING TO FSTAB"
 	if dev not in fstab:
 		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"ADDING TO FSTAB :: NOT IN FSTAB"
 		ts  = time.time()
-		st  = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d%H%M%S')
+		st  = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H-%M-%S-%f')
 		bkp = "/tmp/fstab-" + st
 		
 		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"ADDING TO FSTAB :: NOT IN FSTAB :: BKP"
 		print "L"*100
 		print "MAKING BACKUP OF FSTAB TO", bkp
 		if for_real:
+			print "COPYING"
 			shutil.copy( "/etc/fstab", bkp )
 		print "T"*100 + "\n\n"
 
 
 		#dev, tgt, type, conf, st, nd
 		#rw,user,auto,noatime,exec,relatime,seclabel,data=writeback,barrier=0,nobh,errors=remount-ro
-		fscmd= "\n\n#%s\n%s\t%s\t%s\t%s\t%s" % ( st, dev, mount, fstype, fsopt, '0\t0' )
+		fscmd = "\n\n#%s\n%s\t%s\t%s\t%s\t%s" % ( st, dev, mount, fstype, fsopt, '0\t0\n' )
 		
 
 		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"ADDING TO FSTAB :: NOT IN FSTAB :: APPENDING"
@@ -202,7 +229,8 @@ def addToFstab( dev, mount, fstab, fstype, fsopt ):
 		print "APPENDING TO FSTAB"
 		print fscmd
 		if for_real:
-			open( '/etc/fstab', 'a+' ).write( fscmd )
+			print "WRITING"
+			open( '/etc/fstab', 'a' ).write( fscmd )
 		print "T"*100 + "\n\n"
 
 	else:
@@ -243,6 +271,7 @@ def loadFstab():
 	print "FSTAB LOADED\n\n"
 	
 	return fstab
+
 
 def loadconfig():
 	fstab   = loadFstab()
@@ -362,7 +391,7 @@ def loadconfig():
 			
 			if mount not in setup:
 				setup[ mount ] = {
-							'device'    : device,
+							'device'    : os.path.join('/dev/disk/by-id', device ),
 							'mount'     : mount,
 							'fstype'    : fstype,
 							'fsopt'     : fsopt,
@@ -383,19 +412,26 @@ def loadconfig():
 
 
 	print "CHECKING CONFIG"
+	mountToDel = []
 	for mount in setup:
-		dev = setup[mount]['device']
-		if dev in fstab:
-			print "  DEV",dev,"IN FSTAB"
-			tgt = fstab[ dev ]
-			if tgt != mount:
-				print "  DEV",dev,"IN FSTAB. TARGETS DO NOT MATCH"
-				print "    FSTAB MOUNT POINT", tgt, "DOES NOT MATCH CONFIG MOUNT POINT", tgt
+		dev    = setup[mount]['device']
+		devlnk = os.readlink(dev)
+		for dp in [ dev, devlnk]:
+			if dp in fstab:
+				print "  DEV",dev,'as',dp,"IN FSTAB"
+				tgt = fstab[ dp ]
+				if tgt != mount:
+					print "  DEV",dev,'AS',dp,"IN FSTAB. TARGETS DO NOT MATCH"
+					print "    FSTAB MOUNT POINT", tgt, "DOES NOT MATCH CONFIG MOUNT POINT", tgt, 'IGNORING'
+					mountToDel.append(mount)
+				else:
+					print "  DEV",dev,"IN FSTAB. TARGETS MATCH",mount
 			else:
-				print "  DEV",dev,"IN FSTAB. TARGETS MATCH",mount
-		else:
-			print "  DEV",dev,"not IN FSTAB"
+				print "  DEV",dev,"not IN FSTAB"
 
+	for mount in mountToDel:
+		setup.pop( mount )
+			
 	print "CONFIG CHECKED\n\n"
 	return ( fstab, setup )
 
