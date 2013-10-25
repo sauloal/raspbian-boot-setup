@@ -136,7 +136,10 @@ def mountCmd( dev, mount, opts="", fstype="" ):
 		mounted    = subprocess.check_output(['mount'])
 	else:
 		mounted    = subprocess.Popen(['mount'], stdout=subprocess.PIPE).stdout
-		
+	
+	if fstype == 'auto':
+		fstype = ''
+	
 	if fstype != '':
 		fstype = '-t '+fstype
 		
