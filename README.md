@@ -19,12 +19,12 @@ The mechanism will allow communities to form around Raspbian as the base for spe
 3. /boot is a FAT file system so that *any* OS can edit it.
 
 
-# Included
+# Examples Included
 
-- /etc/networks/interfaces for wifi and cable
-- /etc/resolve.conf for DNS (google and open dns)
-- begin of attach_volume.py script to auto mount usb in desired folder
-- copies id_rsa and known_hosts if exists
+- /etc/networks/interfaces for wifi and cable     - if exists under /file
+- /etc/resolve.conf for DNS (google and open dns) - if exists under /file
+- ~/pi/.ssh/id_rsa and ~/pi/.ssh/known_hosts      - if exists under /file
+- prelimirary attach_devices.py script to auto mount usb and binding desired folders
 
 #### Here are some examples of things you might do...
 
