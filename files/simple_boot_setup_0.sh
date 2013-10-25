@@ -50,17 +50,17 @@ disable_after_first_run(){
 
     ##
     ## ## Install a package that will automatically mount & unmount USB drives
-    echo   "$0: INSTALLING"   >> $LOG
-    logger "$0: INSTALLING"
+    #echo   "$0: INSTALLING"   >> $LOG
+    #logger "$0: INSTALLING"
     #apt-get install usbmount
-    echo   "$0: INSTALLED"    >> $LOG
-    logger "$0: INSTALLED"
+    #echo   "$0: INSTALLED"    >> $LOG
+    #logger "$0: INSTALLED"
     ##
     ## ## Setup wifi so you can connect to a secured network without a keyboard & monitor!
 
 
 
-	
+
     echo   "$0: Interfaces"    >> $LOG
     logger "$0: Interfaces"
 	#http://shallowsky.com/blog/hardware/raspberry-pi-without-monitor.html

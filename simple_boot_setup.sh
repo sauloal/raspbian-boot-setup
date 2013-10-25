@@ -27,4 +27,4 @@ if [[ -e "/boot/files/simple_boot_setup_1.sh" ]]; then
 	/bin/bash /boot/files/simple_boot_setup_1.sh 2>&1 | tee -a $LOG
 fi
 
-echo "END" > $LOG
+echo "END" >> $LOG

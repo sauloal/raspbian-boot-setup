@@ -19,6 +19,11 @@ LOG=$0.$DATESTR.log
 
 echo "START" > $LOG
 
+SRC=/boot/files
 
+FIL=$SRC/disk
+if [ -e $FIL ]; then
+	python $SRC/attach_devices.py -c $FIL
+fi
 
 echo "END" >> $LOG

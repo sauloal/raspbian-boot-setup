@@ -26,6 +26,43 @@ The mechanism will allow communities to form around Raspbian as the base for spe
 - ~/pi/.ssh/id_rsa and ~/pi/.ssh/known_hosts      - if exists under /file
 - prelimirary attach_devices.py script to auto mount usb and binding desired folders
 
+
+# TODO
+
+- create another script to be run AFTER network
+
+
+# HOW TO
+
+## INSTALL
+
+### LINUX
+with both partitions mounted:
+- run install_linux.sh 
+
+### WINDOWS
+- copy files to sd card
+- boot RPi
+- run /boot/install_windows.sh
+
+
+## SETUP
+### NETWORK
+- edit files/interfaces with your desired IP or DHCP
+- edit files/resolv.conf for DNS
+
+### SSH
+- add files/id_rsa and files/id_rsa.pub if you want
+- add files/authorized_keys with your public key inside to access without requiring password
+
+### DISK
+- edit files/disks with the necessary information
+the disk id can be seen on linux on /dev/disk/by-id/<DEVICE-NAME OR PARTITION NAME>
+
+### DISABLE
+- rename any of the configuration or bash scripts in the files folder to disable it
+
+
 #### Here are some examples of things you might do...
 
     ## Remove unneeded packages

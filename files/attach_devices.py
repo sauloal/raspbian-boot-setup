@@ -7,8 +7,8 @@ import re
 import shutil
 from pprint import pprint as pp
 
-DEFAULT_FS_TYPE='auto'
-DEFAULT_FS_OPTIONS='defaults'
+DEFAULT_FS_TYPE    = 'auto'
+DEFAULT_FS_OPTIONS = 'defaults'
 
 #DEFAULT_FS_TYPE='ext4'
 #DEFAULT_FS_OPTIONS='rw,user,auto,noatime,exec,relatime,seclabel,data=writeback,barrier=0,nobh,errors=remount-ro'
@@ -102,7 +102,8 @@ def mountFolder(cfg, fstab):
 			os.makedirs( dst_folder )
 	
 	print
-	mountCmd(   src_folder, dst_folder, opts=fsoptCmd )
+	if os.path.exists( src_folder ):
+		mountCmd(   src_folder, dst_folder, opts=fsoptCmd )
 	print
 	addToFstab( src_folder, dst_folder, fstab, fstype, fsopt )
 
@@ -117,8 +118,13 @@ def mountDev(cfg, fstab):
 	print "MOUNTING :: DEV", dev,"MOUNT POINT",mount
 	print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"FS TYPE", fstype,"FS OPT", fsopt
 
-	mountCmd(   dev, mount, opts=fsoptCmd, fstype=fstype )
-	addToFstab( dev, mount, fstab, fstype, fsopt         )
+	devPath = os.path.join( '/dev/disk/by-id', dev )
+	
+	print
+	if os.path.exists( devPath ):
+		mountCmd(   devPath, mount, opts=fsoptCmd, fstype=fstype )
+	print
+	addToFstab( devPath, mount, fstab, fstype, fsopt         )
 
 
 def mountCmd( dev, mount, opts="", fstype="" ):
@@ -141,7 +147,7 @@ def mountCmd( dev, mount, opts="", fstype="" ):
 				os.makedirs( mount )
 			print "T"*100 + "\n\n"
 
-
+		
 		cmd = [ 'mount', fstype, opts, dev, mount ]
 		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"MOUNTING :: MOUNTING :: RUNNING"
 		print "L"*100
