@@ -1,4 +1,19 @@
 #!/bin/python
+"""
+Saulo Alves - 2013
+Given a config file, read the disk ID and the desired folders.
+
+- Check if disks are already mounted
+  + If not mounts the disks
+- Adds the disk to fstab (if requested, creating a backup in /tmp)
+  if not already there, confirming if destination is still the same
+
+- Check if folders are already mounted
+  + Bind mounts the folders
+- Add the folder to fstab (if requested, creating a backup in /tmp)
+  if not already there, confirming if destination is still the same
+"""
+
 import os, sys
 import time
 import datetime
@@ -68,8 +83,6 @@ def main():
 	print "SETUP"
 	pp( setup, indent=2 )
 
-
-
 	for mount in sorted( setup ):
 		print "MOUNTING :: DEV", mount
 		if setup[mount] is None: continue
@@ -82,13 +95,37 @@ def main():
 		print "\n\n"
 
 
+def mountDev(cfg, fstab):
+	dev          = cfg['device']
+	mount        = cfg['mount' ]
+	fstype       = cfg['fstype']
+	fsopt        = cfg['fsopt' ]
+	addDiskFstab = cfg['addDiskFstab' ]
+	fsoptCmd     = '-o ' + fsopt
+	
+	print "MOUNTING :: DEV", dev,"MOUNT POINT",mount
+	print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"FS TYPE", fstype,"FS OPT", fsopt
+	
+	print
+	if os.path.exists( dev ):
+		mountCmd(   dev, mount, opts=fsoptCmd, fstype=fstype )
+		
+	else:
+		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount, 'DEVICE DOES NOT EXISTS. ADDING TO FSTAB ONLY'
+	print
+	
+	if addDiskFstab:
+		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount, 'DEVICE DOES NOT EXISTS. SKIPPING FSTAB'
+		addToFstab( dev, mount, fstab, fstype, fsopt         )
+
 
 def mountFolder(cfg, fstab):
-	src_folder = cfg['src_folder']
-	dst_folder = cfg['dst_folder']
-	fstype     = 'none'
-	fsopt      = 'bind'
-	fsoptCmd   = '--bind -o ' + fsopt
+	src_folder     = cfg['src_folder'    ]
+	dst_folder     = cfg['dst_folder'    ]
+	addFolderFstab = cfg['addFolderFstab']
+	fstype         = 'none'
+	fsopt          = 'bind'
+	fsoptCmd       = '--bind -o ' + fsopt
 
 	print "MOUNTING :: BIND SRC FOLDER", src_folder,"DST FOLDER",dst_folder
 	
@@ -108,28 +145,10 @@ def mountFolder(cfg, fstab):
 	else:
 		print "MOUNTING :: BIND SRC FOLDER", src_folder,"DST FOLDER",dst_folder,' :: SOURCE DOES NOT EXISTS. ADDING TO FSTAB ONLY'
 		print
-		
-	addToFstab( src_folder, dst_folder, fstab, fstype, fsopt )
-
-
-def mountDev(cfg, fstab):
-	dev        = cfg['device']
-	mount      = cfg['mount' ]
-	fstype     = cfg['fstype']
-	fsopt      = cfg['fsopt' ]
-	fsoptCmd   = '-o ' + fsopt
 	
-	print "MOUNTING :: DEV", dev,"MOUNT POINT",mount
-	print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"FS TYPE", fstype,"FS OPT", fsopt
-	
-	print
-	if os.path.exists( dev ):
-		mountCmd(   dev, mount, opts=fsoptCmd, fstype=fstype )
-		
-	else:
-		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount, 'DEVICE DOES NOT EXISTS. ADDING TO FSTAB ONLY'
-	print
-	addToFstab( dev, mount, fstab, fstype, fsopt         )
+	if addFolderFstab:
+		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount, 'DEVICE DOES NOT EXISTS. SKIPPING FSTAB'
+		addToFstab( src_folder, dst_folder, fstab, fstype, fsopt )
 
 
 def mountCmd( dev, mount, opts="", fstype="" ):
@@ -182,7 +201,7 @@ def mountCmd( dev, mount, opts="", fstype="" ):
 	else:
 		print "MOUNTING CMD :: DEV", dev,"MOUNT POINT",mount,"ALREADY MOUNTED. SKIPPING"
 
-		
+
 def getMounted():
 	if pyver == '2.7':
 		mounted    = subprocess.check_output(['mount'])
@@ -200,7 +219,7 @@ def getMounted():
 	pp( mnt, indent=2 )
 	
 	return mnt
-	
+
 
 def addToFstab( dev, mount, fstab, fstype, fsopt ):
 	print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"ADDING TO FSTAB"
@@ -235,20 +254,6 @@ def addToFstab( dev, mount, fstab, fstype, fsopt ):
 
 	else:
 		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount,"ADDING TO FSTAB :: ALREADY IN FSTAB"
-
-
-#TODO: add to fstab
-#if [[ -z `grep $EC2_EXTERNAL_CONFIG_SRC /etc/fstab` ]]; then
-#    echo "adding external $EC2_EXTERNAL_CONFIG_SRC to fstab"
-#    #http://blog.smartlogicsolutions.com/2009/06/04/mount-options-to-improve-ext4-file-system-performance/
-#    #gid 19 = floppy
-#    #data=ordered
-  
-#    echo "$EC2_EXTERNAL_CONFIG_SRC   $EC2_EXTERNAL_CONFIG_DST        ext4    rw,user,auto,noatime,exec,relatime,seclabel,data=writeback,barrier=0,nobh,errors=remount-ro    0 0" >> /etc/fstab
-  
-#  else
-#    echo "external already in fstab"
-#  fi
 
 
 def loadFstab():
@@ -307,28 +312,32 @@ def loadconfig():
 
 			cols = line.split(';')
 
-			if len( cols ) != 6:
+			if len( cols ) != 7:
 				print "wrong number of colums. %d. should be 7" % len(cols)
-				print "/dev/disk/by-id	mount_point	fs_type	fs_options	src_folder	dst_folder"
+				print "/dev/disk/by-id	mount_point	fs_type	fs_options	src_folder	dst_folder	addDiskFstab	addFolderFstab"
 				print line
 				sys.exit( 1 )
 
 			print "  CONFIG COLS", cols
 			#/dev/disk/by-id	mount_point	fs_type	fs_options	src_folder	dst_folder
-			device     = cols[0]
-			mount      = cols[1]
-			fstype     = cols[2]
-			fsopt      = cols[3]
-			src_folder = cols[4]
-			dst_folder = cols[5]
+			device         = cols[0]
+			mount          = cols[1]
+			fstype         = cols[2]
+			fsopt          = cols[3]
+			src_folder     = cols[4]
+			dst_folder     = cols[5]
+			addDiskFstab   = cols[6]
+			addFolderFstab = cols[7]
 
 			# converting to None
-			if len(device    ) == 0: device     = None
-			if len(mount     ) == 0: mount      = None
-			if len(fstype    ) == 0: fstype     = None
-			if len(fsopt     ) == 0: fsopt      = None
-			if len(src_folder) == 0: src_folder = None
-			if len(dst_folder) == 0: dst_folder = None
+			if len(device        ) == 0: device         = None
+			if len(mount         ) == 0: mount          = None
+			if len(fstype        ) == 0: fstype         = None
+			if len(fsopt         ) == 0: fsopt          = None
+			if len(src_folder    ) == 0: src_folder     = None
+			if len(dst_folder    ) == 0: dst_folder     = None
+			if len(addDiskFstab  ) == 0: addDiskFstab   = None
+			if len(addFolderFstab) == 0: addFolderFstab = None
 
 			# checking compulsory
 			if device is None:
@@ -359,6 +368,17 @@ def loadconfig():
 				parser.print_help()
 				sys.exit(1)
 
+			if addDiskFstab in ['1', 'true', 'True', 'TRUE']:
+				addDiskFstab = True
+			else:
+				addDiskFstab = False
+
+			if addFolderFstab in ['1', 'true', 'True', 'TRUE']:
+				addFolderFstab = True
+			else:
+				addFolderFstab = False
+				
+				
 
 			# check if repeated
 			if mount in setup:
@@ -389,23 +409,28 @@ def loadconfig():
 			else:
 				devs[device] = mount
 			
+			
+			
 			if mount not in setup:
 				setup[ mount ] = {
-							'device'    : os.path.join('/dev/disk/by-id', device ),
-							'mount'     : mount,
-							'fstype'    : fstype,
-							'fsopt'     : fsopt,
-							'folders'   : [
+							'device'      : os.path.join('/dev/disk/by-id', device ),
+							'mount'       : mount,
+							'fstype'      : fstype,
+							'fsopt'       : fsopt,
+							'addDiskFstab': addFstab,
+							'folders'     : [
 								{
-									'src_folder': os.path.join( mount, src_folder ),
-									'dst_folder': dst_folder
+									'src_folder'    : os.path.join( mount, src_folder ),
+									'dst_folder'    : dst_folder,
+									'addFolderFstab': addFolderFstab
 								}
 							]
 						}
 			else:
 				setup[ mount ]['folders'].append( {
-						'src_folder': os.path.join( mount, src_folder ),
-						'dst_folder': dst_folder
+						'src_folder'    : os.path.join( mount, src_folder ),
+						'dst_folder'    : dst_folder,
+						'addFolderFstab': addFolderFstab
 					}
 				)
 	print "CONFIG LOADED\n\n"
