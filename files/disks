@@ -1,3 +1,3 @@
 #/dev/disk/by-id;mount_point;fs_type;fs_options;src_folder;dst_folder;addDiskFstab;addFolderFstab
-usb-CBM_Flash_Disk_261633005538D501-0:0-part1;/media/king1;;;king1folder;/var/www/html/files/king1;0;0
-usb-CBM_Flash_Disk_261633005538D501-0:1-part1;/media/king2;;;king2folder;/var/www/html/files/king2;0;0
+usb-CBM_Flash_Disk_261633005538D501-0:0-part1;/media/king1;;;/;/var/www/files/king1;0;0
+usb-CBM_Flash_Disk_261633005538D501-0:1-part1;/media/king2;;;/;/var/www/files/king2;0;0
