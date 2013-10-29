@@ -115,8 +115,11 @@ def mountDev(cfg, fstab):
 	print
 	
 	if addDiskFstab:
-		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount, 'DEVICE DOES NOT EXISTS. SKIPPING FSTAB'
+		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount, 'ADDING TO FSTAB'
 		addToFstab( dev, mount, fstab, fstype, fsopt         )
+	else:
+		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount, 'SKIPPING FSTAB'
+
 
 
 def mountFolder(cfg, fstab):
@@ -147,14 +150,18 @@ def mountFolder(cfg, fstab):
 		print
 	
 	if addFolderFstab:
-		print "MOUNTING :: DEV", dev,"MOUNT POINT",mount, 'DEVICE DOES NOT EXISTS. SKIPPING FSTAB'
+		print "MOUNTING :: BIND SRC FOLDER", src_folder,"DST FOLDER",dst_folder,' :: ADDING TO FSTAB'
 		addToFstab( src_folder, dst_folder, fstab, fstype, fsopt )
+	else:
+		print "MOUNTING :: BIND SRC FOLDER", src_folder,"DST FOLDER",dst_folder,' :: SKIPPING FSTAB'
 
 
 def mountCmd( dev, mount, opts="", fstype="" ):
 	mounted = getMounted()
-	
-	devLnk  = os.readlink( dev )
+
+	devLnk  = dev
+	if os.path.islink( dev ):
+		devLnk  = os.readlink( dev )
 	
 	if fstype == 'auto':
 		fstype = ''
@@ -312,8 +319,8 @@ def loadconfig():
 
 			cols = line.split(';')
 
-			if len( cols ) != 7:
-				print "wrong number of colums. %d. should be 7" % len(cols)
+			if len( cols ) != 8:
+				print "wrong number of colums. %d. should be 8" % len(cols)
 				print "/dev/disk/by-id	mount_point	fs_type	fs_options	src_folder	dst_folder	addDiskFstab	addFolderFstab"
 				print line
 				sys.exit( 1 )
@@ -362,6 +369,8 @@ def loadconfig():
 				print "    no source folder defined in config file"
 				parser.print_help()
 				sys.exit(1)
+			else:
+				src_folder = src_folder.strip("/")
 
 			if dst_folder is None:
 				print "    no destination folder defined in config file"
@@ -417,7 +426,7 @@ def loadconfig():
 							'mount'       : mount,
 							'fstype'      : fstype,
 							'fsopt'       : fsopt,
-							'addDiskFstab': addFstab,
+							'addDiskFstab': addDiskFstab,
 							'folders'     : [
 								{
 									'src_folder'    : os.path.join( mount, src_folder ),
@@ -439,9 +448,12 @@ def loadconfig():
 	print "CHECKING CONFIG"
 	mountToDel = []
 	for mount in setup:
-		dev    = setup[mount]['device']
-		devlnk = os.readlink(dev)
-		for dp in [ dev, devlnk]:
+		dev     = setup[mount]['device']
+		devLnk  = dev
+		if os.path.islink( dev ):
+			devLnk  = os.readlink( dev )
+
+		for dp in [ dev, devLnk ]:
 			if dp in fstab:
 				print "  DEV",dev,'as',dp,"IN FSTAB"
 				tgt = fstab[ dp ]
