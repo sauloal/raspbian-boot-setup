@@ -1,5 +1,5 @@
 #/dev/disk/by-id;mount_point;fs_type;fs_options;src_folder;dst_folder;addDiskFstab;addFolderFstab
-usb-CBM_Flash_Disk_261633005538D501-0:0-part1;/media/king1;;fmask=0022,dmask=0022,defaults;/;/var/www/files/king1;1;1
-usb-CBM_Flash_Disk_261633005538D501-0:1-part1;/media/king2;;fmask=0022,dmask=0022,defaults;/;/var/www/files/king2;1;1
-usb-WD_My_Book_1140_5743415A414C333438373235-0:0-part1;/media/book;;fmask=0022,dmask=0022,defaults;/;/var/www/files/book;1;1
+usb-CBM_Flash_Disk_261633005538D501-0:0-part1;/media/king1;;auto,user,users,flush,utf8=1,rw,fmask=0022,dmask=0022,umask=0000,uid=pi,gid=pi,defaults;/Movies;/var/www/files/king1;1;1
+usb-CBM_Flash_Disk_261633005538D501-0:1-part1;/media/king2;;auto,user,users,flush,utf8=1,rw,fmask=0022,dmask=0022,umask=0000,uid=pi,gid=pi,defaults;/;/var/www/files/king2;1;1
+usb-WD_My_Book_1140_5743415A414C333438373235-0:0-part1;/media/book;;auto,user,users,rw,fmask=0022,dmask=0022,umask=0000,uid=pi,gid=pi,defaults;/;/var/www/files/book;1;1
 
